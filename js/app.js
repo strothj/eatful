@@ -2,11 +2,13 @@
 
 var FS_CLIENT_ID = "41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15",
     FS_CLIENT_SECRET = "CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO",
+    FS_ENDPOINT = "https://api.foursquare.com/v2/venues",
     FS_RESULT_LIMIT = 30,
     FS_CAT_ALL_RESTAURANT = "4bf58dd8d48988d1c4941735",
     FS_API_INTENT = "checkin",
     FS_API_VERSION = "20161001",
-    FS_API_RESPONSE_TYPE = "foursquare";
+    FS_API_RESPONSE_TYPE = "foursquare",
+    FS_JSONP_CALLBACK = "callback";
 var CUISINE_FILTERS = {
     "Any cuisine": FS_CAT_ALL_RESTAURANT,
     "American": "4bf58dd8d48988d14e941735",
@@ -26,14 +28,64 @@ var CUISINE_FILTERS = {
 };
 
 $(function () {
-    console.log(createSearchConfig());
+    var map;
+    getCurrentLocation()
+        .then(function (location) {
+            return performSearch(location);
+        })
+        .then(function (results) {
+            map = initMap({
+                lat: results.response.geocode.feature.geometry.center.lat,
+                lng: results.response.geocode.feature.geometry.center.lng
+            });
+        })
+        .fail(function (e) {
+            console.log(e);
+        });
 });
+
+function getCurrentLocation() {
+    var lookup = $.Deferred();
+    var placeholder = { placeholder: "Washington, DC" };
+    try {
+        navigator.geolocation.getCurrentPosition(
+            function (location) {
+                lookup.resolve({ ll: "" + location.coords.latitude + ", " + location.coords.longitude });
+            },
+            function (e) { lookup.resolve(placeholder); }
+        );
+    }
+    catch (e) {
+        lookup.resolve(placeholder);
+    }
+    finally {
+        return lookup.promise();
+    }
+}
+
+function initMap(location) {
+    return new google.maps.Map(document.getElementById('map'), {
+        center: location,
+        scrollwheel: true,
+        zoom: 15
+    });
+}
+
+function performSearch(location) {
+    var config = createSearchConfig(location);
+    if (location.placeholder) { config.near = location.placeholder; }
+    if (location.ll) { config.ll = location.ll; }
+    return $.ajax({
+        url: FS_ENDPOINT + "/search",
+        jsonp: FS_JSONP_CALLBACK,
+        data: config
+    });
+}
 
 function createSearchConfig(address) {
     return {
         client_id: FS_CLIENT_ID,
         client_secret: FS_CLIENT_SECRET,
-        near: address,
         intent: FS_API_INTENT,
         limit: FS_RESULT_LIMIT,
         categoryId: FS_CAT_ALL_RESTAURANT,

@@ -14,10 +14,36 @@
 <body>
 
     <div class="sidebar">
-        <div class="search-container">
+
+        <div class="row search-container">
             <form action="#" id="js-search-form" class="search-form">
                 <input type="text" id="js-search-box">
             </form>
+        </div>
+
+        <div class="row filters-container">
+            <div class="filter-select-container">
+                <div class="filter-title">
+                    <label for="js-filter">Cuisine</label>
+                </div>
+                <div class="filter-option">
+                    <select id="js-filter"></select>
+                </div>
+            </div>
+            <div class="filter-select-container">
+                <div class="filter-title">
+                    <label for="js-open-now">Hours</label>
+                </div>
+                <div class="filter-option">
+                    <select id="js-open-now">
+                        <option value="Any time">Any time</option>
+                        <option value="Open now">Open now</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row listings-container">
         </div>
     </div>
     <div class="map" id="map"></div>

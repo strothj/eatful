@@ -28,9 +28,12 @@ var CUISINE_FILTERS = {
 };
 
 $(function () {
+    populateFilterSelect();
+
     var map;
     getCurrentLocation()
         .then(function (location) {
+            console.log(location);
             //return performSearch(location);
             return validSearchResponse;
         })
@@ -44,6 +47,15 @@ $(function () {
             console.log(e);
         });
 });
+
+function populateFilterSelect() {
+    var select = $("#js-filter");
+    var filters = Object.keys(CUISINE_FILTERS);
+    for (var i = 0; i < filters.length; i++) {
+        select.append('<option value="' + filters[i] + '">' + filters[i] + '</option>');
+    }
+    select.find('option[value="' + filters[0] + '"]').prop("selected", true);
+}
 
 function getCurrentLocation() {
     var lookup = $.Deferred();

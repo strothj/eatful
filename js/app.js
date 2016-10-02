@@ -31,7 +31,8 @@ $(function () {
     var map;
     getCurrentLocation()
         .then(function (location) {
-            return performSearch(location);
+            //return performSearch(location);
+            return validSearchResponse;
         })
         .then(function (results) {
             map = initMap({

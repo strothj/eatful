@@ -21,8 +21,15 @@ var CUISINE_FILTERS = {
 var mapLoadState = $.Deferred();
 
 $(function () {
+    var state = {};
+
     populateFilterSelect();
     $("#js-search-box").focus();
+
+    $("#js-search-form").submit(function (event) {
+        event.preventDefault();
+        performSearch(state);
+    });
 
     loadMap().then(function () {
     });
@@ -50,25 +57,62 @@ function loadMap() {
     return mapLoadState.promise();
 }
 
-function performSearch(location) {
-    var config = createSearchConfig(location);
-    if (location.placeholder) { config.near = location.placeholder; }
-    if (location.ll) { config.ll = location.ll; }
-    return $.ajax({
+function performSearch(state) {
+    var cuisine = CUISINE_FILTERS[$("#js-filter").val()];
+    var config = createSearchConfig(cuisine);
+    config.near = $("#js-search-box").val();
+
+    $.ajax({
         url: "https://api.foursquare.com/v2/venues/search",
         jsonp: "callback",
         data: config
+
+    }).then(function (jqxhrData) {
+        state.venues = jqxhrData.response.venues;
+        var getHoursReqs = [];
+        var hoursSearchConfig = createHoursSearchConfig();
+        for (var i = 0; i < state.venues.length; i++) {
+            getHoursReqs.push(
+                $.ajax({
+                    url: "https://api.foursquare.com/v2/venues/" + state.venues[i].id + "/hours",
+                    jsonp: "callback",
+                    data: hoursSearchConfig
+                })
+            );
+        }
+        return $.when.apply($, getHoursReqs);
+
+    }).then(function () {
+        state.hours = Array.prototype.slice.call(arguments).map(function (jqxhr) {
+            return jqxhr[0].response.hours;
+        });
+
+    }).fail(function (e) {
+        console.error("error retrieving venues and times:", e);
+
+    }).always(function () {
+        console.log("venues", state.venues);
+        
     });
 }
 
-function createSearchConfig(address) {
+function createSearchConfig(cuisine) {
     return {
         client_id: "41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15",
         client_secret: "CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO",
         intent: "checkin",
         limit: 30,
-        categoryId: CUISINE_FILTERS["Any cuisine"],
+        categoryId: cuisine,
         v: "20161001", // API version
+        m: "foursquare"
+    };
+}
+
+function createHoursSearchConfig() {
+    return {
+        client_id: "41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15",
+        client_secret: "CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO",
+        v: "20161001",
         m: "foursquare"
     };
 }

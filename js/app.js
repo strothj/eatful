@@ -189,7 +189,7 @@ $(function main() {
     performSearch();
   });
 
-  $('#js-search-box').focus();
+  $('#js-search-form').focus();
   loadMap().done(function mapReady(m) {
     map = m;
   });

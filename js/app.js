@@ -117,10 +117,10 @@ function populateResultList(searchResults) {
   for (var i = 0; i < searchResults.venues.length; i++) {
     venue = searchResults.venues[i];
     elem = '<div class="listing row">' +
-            '<h3><a href="#" class="js-listing">' + venue.name + '</a></h3>' +
+            '<h3><a href="#" class="js-listing" id="' + venue.id + '">' + venue.name + '</a></h3>' +
             '<h4>Address</h4>' +
             venue.addressHTML +
-            '<a href="http://foursquare.com/venue/' + venue.id + '">Foursquare Page</a>';
+            '<a href="http://foursquare.com/venue/' + venue.id + '" target="_blank">Foursquare Page</a>';
     '</div>';
     listContainer.append(elem);
   }
@@ -165,15 +165,18 @@ function searchVenues(location, cuisine) {
 $(function main() {
   var map;
   var mapMarkers = [];
+  var cachedResults;
 
   var showResults = function(searchResults) { // eslint-disable-line func-names
     populateResultList(searchResults);
     mapMarkers = placeMapMarkers(searchResults, map, mapMarkers);
+    map.setZoom(13);
   };
 
   var performSearch = function() { // eslint-disable-line func-names
     searchVenues($('#js-search-box').val(), $('#js-filter').val())
       .done(function filterHours(searchResults) {
+        cachedResults = searchResults;
         showResults(searchResults);
       });
   };
@@ -189,7 +192,21 @@ $(function main() {
     performSearch();
   });
 
+  $('#js-listings-container').on('click', '.js-listing', function(event) { // eslint-disable-line func-names
+    event.preventDefault();
+    var targetID = $(this).attr('id');
+    console.log(targetID);
+    var venue = cachedResults.venues.find(function(elem) {
+      return targetID === elem.id;
+    });
+    if (venue) {
+      map.panTo({lat: venue.lat, lng: venue.lng});
+      map.setZoom(15);
+    }
+  });
+
   $('#js-search-form').focus();
+
   loadMap().done(function mapReady(m) {
     map = m;
   });

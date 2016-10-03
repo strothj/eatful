@@ -22,22 +22,67 @@ var mapLoadState = $.Deferred();
 
 $(function () {
     var state = {};
+    var map;
+    var mapMarkers = [];
 
     populateFilterSelect();
     $("#js-search-box").focus();
 
     $("#js-search-form").submit(function (event) {
         event.preventDefault();
-        getVenuesMock($("#js-search-box").val(), $("#js-filter").val())
+        getVenues($("#js-search-box").val(), $("#js-filter").val())
             .done(function (result) {
-                console.log(filterVenueByHours(result.venues, result.hours));
+                var filteredResults = filterVenueByHours(result.venues, result.hours, $("#js-open-now").val()); 
+                populateResultList(filteredResults);
+                mapMarkers = placeMapMarkers(filteredResults, map, mapMarkers);
             });
     });
 
-    loadMap().done(function () {
+    loadMap().done(function (m) {
+        map = m;
     });
 
 });
+
+function placeMapMarkers(results, map, markers) {
+    var venues = results.venues;
+    for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+    }
+    markers = [];
+    for (var i = 0; i < venues.length; i++) {
+        markers.push(new google.maps.Marker({
+            position: {
+                lat: venues[i].location.lat,
+                lng: venues[i].location.lng
+            },
+            map: map,
+            title: venues[i].name
+        }));
+    }
+    return markers;
+}
+
+function populateResultList(results) {
+    var listContainer = $("#js-listings-container");
+    listContainer.empty();
+
+    var elem, venue;
+    for (var i = 0; i < results.venues.length; i++) {
+        venue = results.venues[i];
+        elem = '<div class="listing row">' +
+            '<h3><a href="#" class="js-listing">' + venue.name + '</a></h3>' +
+            '<h4>Address</h4>'+
+            '<p class="listing-address">';
+        for (var j = 0; j < venue.location.formattedAddress.length; j++) {
+            elem += venue.location.formattedAddress[j] + '<br>';
+        }
+        elem += '</p>' +
+            '<a href="http://foursquare.com/venue/' + venue.id + '">Foursquare Page</a>'
+            '</div>';
+        listContainer.append(elem);
+    }
+}
 
 function populateFilterSelect() {
     var select = $("#js-filter");
@@ -95,9 +140,10 @@ function getVenues(location, cuisine) {
     });
 }
 
-function filterVenueByHours(venues, hours) {
-    if (hours === "Any time") {
-        return venues;
+function filterVenueByHours(venues, hours, filter) {
+    console.log(filter);
+    if (filter === "Any time") {
+        return { venues: venues, hours: hours };
     }
 
     var results = {

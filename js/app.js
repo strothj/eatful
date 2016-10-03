@@ -30,7 +30,7 @@ $(function () {
         event.preventDefault();
         getVenuesMock($("#js-search-box").val(), $("#js-filter").val())
             .done(function (result) {
-                console.log(result);
+                console.log(filterVenueByHours(result.venues, result.hours));
             });
     });
 
@@ -93,6 +93,39 @@ function getVenues(location, cuisine) {
         return result;
 
     });
+}
+
+function filterVenueByHours(venues, hours) {
+    if (hours === "Any time") {
+        return venues;
+    }
+
+    var results = {
+        venues: [],
+        hours: []
+    };
+    // debugger;
+    for (var i = 0; i < venues.length; i++) {
+        if (!hours[i].timeframes) continue;
+        for (var j = 0; j < hours[i].timeframes.length; j++) {
+            if (!hours[i].timeframes[j].includesToday) continue;
+            for (var k = 0; k < hours[i].timeframes[j].open.length; k++) {
+                var openTimeframe = hours[i].timeframes[j].open[k];
+                var open = moment()
+                    .hour(parseInt(openTimeframe.start.slice(0, 2)))
+                    .minute(parseInt(openTimeframe.start.slice(2)));
+                var close = moment()
+                    .hour(parseInt(openTimeframe.end.slice(0, 2)))
+                    .minute(parseInt(openTimeframe.end.slice(2)));
+
+                if (moment().isBetween(open, close, null, "[]")) {
+                    results.venues.push(venues[i]);
+                    results.hours.push(hours[i]);
+                }
+            }
+        }
+    }
+    return results;
 }
 
 function createSearchConfig(cuisine) {

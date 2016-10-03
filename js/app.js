@@ -28,10 +28,13 @@ $(function () {
 
     $("#js-search-form").submit(function (event) {
         event.preventDefault();
-        performSearch(state);
+        getVenuesMock($("#js-search-box").val(), $("#js-filter").val())
+            .done(function (result) {
+                console.log(result);
+            });
     });
 
-    loadMap().then(function () {
+    loadMap().done(function () {
     });
 
 });
@@ -57,24 +60,25 @@ function loadMap() {
     return mapLoadState.promise();
 }
 
-function performSearch(state) {
-    var cuisine = CUISINE_FILTERS[$("#js-filter").val()];
-    var config = createSearchConfig(cuisine);
-    config.near = $("#js-search-box").val();
+function getVenues(location, cuisine) {
+    var result = {};
+    var cuisineFilter = CUISINE_FILTERS[cuisine];
+    var config = createSearchConfig(cuisineFilter);
+    config.near = location;
 
-    $.ajax({
+    return $.ajax({
         url: "https://api.foursquare.com/v2/venues/search",
         jsonp: "callback",
         data: config
 
     }).then(function (jqxhrData) {
-        state.venues = jqxhrData.response.venues;
+        result.venues = jqxhrData.response.venues;
         var getHoursReqs = [];
         var hoursSearchConfig = createHoursSearchConfig();
-        for (var i = 0; i < state.venues.length; i++) {
+        for (var i = 0; i < result.venues.length; i++) {
             getHoursReqs.push(
                 $.ajax({
-                    url: "https://api.foursquare.com/v2/venues/" + state.venues[i].id + "/hours",
+                    url: "https://api.foursquare.com/v2/venues/" + result.venues[i].id + "/hours",
                     jsonp: "callback",
                     data: hoursSearchConfig
                 })
@@ -83,16 +87,11 @@ function performSearch(state) {
         return $.when.apply($, getHoursReqs);
 
     }).then(function () {
-        state.hours = Array.prototype.slice.call(arguments).map(function (jqxhr) {
+        result.hours = Array.prototype.slice.call(arguments).map(function (jqxhr) {
             return jqxhr[0].response.hours;
         });
+        return result;
 
-    }).fail(function (e) {
-        console.error("error retrieving venues and times:", e);
-
-    }).always(function () {
-        console.log("venues", state.venues);
-        
     });
 }
 

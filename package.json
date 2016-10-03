@@ -1,0 +1,23 @@
+{
+  "name": "eatfull",
+  "version": "1.0.0",
+  "description": "",
+  "main": "js/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strothj/eatfull.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/strothj/eatfull/issues"
+  },
+  "homepage": "https://github.com/strothj/eatfull#readme",
+  "devDependencies": {
+    "eslint": "^3.7.0",
+    "eslint-config-es5": "^0.5.0"
+  }
+}

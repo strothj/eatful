@@ -162,51 +162,34 @@ function searchVenues(location, cuisine) {
   .then(fetchOperatingHours);
 }
 
-function filterVenueByHours(searchResult, filter) {
-  if (filter === 'Any time') {
-    return searchResult;
-  }
-
-  var filteredResults = Object.assign({}, searchResult);
-  var venues = filteredResults.venues;
-  venues = venues.filter(function noHoursData(venue) {
-    if (venue.timeframes && venue.timeframes.length > 0) { return true; }
-    return false;
-  });
-
-  venues = venues.filter(function notOpenNow(venue) {
-    for (var i = 0; i < venue.timeframes.length; i++) {
-      if (venue.timeframes[i].includesToday) {
-        var timeframe = venue.timeframes[i].open[0];
-        var openingTime = moment({hour: timeframe.start.slice(0, -2), minute: timeframe.start.slice(-2)});
-        var closingTime = moment({hour: timeframe.end.slice(0, -2), minute: timeframe.end.slice(-2)});
-        if (moment().isBetween(openingTime, closingTime, null, '[]')) { return true; }
-      }
-    }
-    return false;
-  });
-
-  filteredResults.venues = venues;
-  return filteredResults;
-}
-
 $(function main() {
   var map;
   var mapMarkers = [];
 
-  populateFilterSelect();
-  $('#js-search-box').focus();
+  var showResults = function(searchResults) {
+    populateResultList(searchResults);
+    mapMarkers = placeMapMarkers(searchResults, map, mapMarkers);
+  };
 
-  $('#js-search-form').submit(function performSearch(event) {
-    event.preventDefault();
+  var performSearch = function() {
     searchVenues($('#js-search-box').val(), $('#js-filter').val())
-            .done(function filterHours(searchResults) {
-              var filteredResults = filterVenueByHours(searchResults, $('#js-open-now').val());
-              populateResultList(filteredResults);
-              mapMarkers = placeMapMarkers(filteredResults, map, mapMarkers);
-            });
+      .done(function filterHours(searchResults) {
+        showResults(searchResults);
+      });
+  };
+
+  populateFilterSelect();
+
+  $('#js-search-form').submit(function() {
+    event.preventDefault();
+    performSearch();
   });
 
+  $('#js-filter').change(function() {
+    performSearch();
+  });
+
+  $('#js-search-box').focus();
   loadMap().done(function mapReady(m) {
     map = m;
   });

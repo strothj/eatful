@@ -20,6 +20,74 @@ var CUISINE_FILTERS = {
 
 var mapLoadState = $.Deferred(); // eslint-disable-line new-cap
 
+function createSearchConfig(cuisine) {
+  return {
+    client_id: '41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15',
+    client_secret: 'CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO',
+    intent: 'checkin',
+    limit: 30,
+    categoryId: cuisine,
+    radius: 5000,
+    v: '20161001', // API version
+    m: 'foursquare'
+  };
+}
+
+function createHoursSearchConfig() {
+  return {
+    client_id: '41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15',
+    client_secret: 'CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO',
+    v: '20161001',
+    m: 'foursquare'
+  };
+}
+
+function parseVenueSearchResponse(jsonResponse) {
+  var results = {};
+  results.venues = jsonResponse.response.venues.map(function arrangeVenueData(venue) {
+    return {
+      id: venue.id,
+      name: venue.name,
+      addressHTML: '<address class="listing-address">' +
+        venue.location.formattedAddress.reduce(function lineSeperate(p, addressLine) {
+          return p + addressLine + '<br>';
+        }, '') + '</address>',
+      lat: venue.location.lat,
+      lng: venue.location.lng
+    };
+  });
+  results.lat = jsonResponse.response.geocode.feature.geometry.center.lat;
+  results.lng = jsonResponse.response.geocode.feature.geometry.center.lng;
+  return results;
+}
+
+function fetchOperatingHours(venuesSearchResult) {
+  var operatingHoursReqs = [];
+  var hoursSearchConfig = createHoursSearchConfig();
+  for (var i = 0; i < venuesSearchResult.venues.length; i++) {
+    operatingHoursReqs.push(
+      $.ajax({
+        url: 'https://api.foursquare.com/v2/venues/' + venuesSearchResult.venues[i].id + '/hours',
+        jsonp: 'callback',
+        data: hoursSearchConfig
+      })
+    );
+  }
+  var combinedVenuesAndHours = $.Deferred(); // eslint-disable-line new-cap
+  var allOperatingHours = $.when.apply($, operatingHoursReqs); // resolves when all operating hours have been returned
+
+  allOperatingHours.done(function addVenueHours() {
+    var operatingHours = Array.prototype.slice.call(arguments).map(function mapHours(ajaxResponse) {
+      return ajaxResponse[0].response.hours.timeframes;
+    });
+    for (var j = 0; j < venuesSearchResult.venues.length; j++) {
+      venuesSearchResult.venues[j].timeframes = operatingHours[j];
+    }
+    combinedVenuesAndHours.resolve(venuesSearchResult);
+  });
+  return combinedVenuesAndHours.promise();
+}
+
 function placeMapMarkers(results, map, markers) {
   var venues = results.venues;
   for (var i = 0; i < markers.length; i++) {
@@ -29,32 +97,29 @@ function placeMapMarkers(results, map, markers) {
   for (i = 0; i < venues.length; i++) {
     newMarkers.push(new google.maps.Marker({
       position: {
-        lat: venues[i].location.lat,
-        lng: venues[i].location.lng
+        lat: venues[i].lat,
+        lng: venues[i].lng
       },
       map: map,
       title: venues[i].name
     }));
   }
+  map.panTo({lat: results.lat, lng: results.lng });
   return newMarkers;
 }
 
-function populateResultList(results) {
+function populateResultList(searchResults) {
   var listContainer = $('#js-listings-container');
   listContainer.empty();
 
   var elem;
   var venue;
-  for (var i = 0; i < results.venues.length; i++) {
-    venue = results.venues[i];
+  for (var i = 0; i < searchResults.venues.length; i++) {
+    venue = searchResults.venues[i];
     elem = '<div class="listing row">' +
             '<h3><a href="#" class="js-listing">' + venue.name + '</a></h3>' +
             '<h4>Address</h4>' +
-            '<p class="listing-address">';
-    for (var j = 0; j < venue.location.formattedAddress.length; j++) {
-      elem += venue.location.formattedAddress[j] + '<br>';
-    }
-    elem += '</p>' +
+            venue.addressHTML +
             '<a href="http://foursquare.com/venue/' + venue.id + '">Foursquare Page</a>';
     '</div>';
     listContainer.append(elem);
@@ -75,7 +140,7 @@ function initMap() { // eslint-disable-line no-unused-vars
   mapLoadState.resolve(new google.maps.Map(document.getElementById('map'), {
     center: { lat: 38.8993278, lng: -77.0846061 },
     scrollwheel: true,
-    zoom: 15
+    zoom: 13
   }));
 }
 
@@ -83,29 +148,7 @@ function loadMap() {
   return mapLoadState.promise();
 }
 
-function createSearchConfig(cuisine) {
-  return {
-    client_id: '41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15',
-    client_secret: 'CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO',
-    intent: 'checkin',
-    limit: 30,
-    categoryId: cuisine,
-    v: '20161001', // API version
-    m: 'foursquare'
-  };
-}
-
-function createHoursSearchConfig() {
-  return {
-    client_id: '41QMSHIG4SMMYCJ4D4WTNAY1JQCE42R0THOR3ELWYFSXBK15',
-    client_secret: 'CYSOZX0ZUTGST3NJTVNWY3W15UFWO4STUDZ0K30N3KZ2E0IO',
-    v: '20161001',
-    m: 'foursquare'
-  };
-}
-
-function getVenues(location, cuisine) {
-  var result = {};
+function searchVenues(location, cuisine) {
   var cuisineFilter = CUISINE_FILTERS[cuisine];
   var config = createSearchConfig(cuisineFilter);
   config.near = location;
@@ -114,65 +157,40 @@ function getVenues(location, cuisine) {
     url: 'https://api.foursquare.com/v2/venues/search',
     jsonp: 'callback',
     data: config
-
-  }).then(function fetchVenues(jqxhrData) {
-    result.venues = jqxhrData.response.venues;
-    var getHoursReqs = [];
-    var hoursSearchConfig = createHoursSearchConfig();
-    for (var i = 0; i < result.venues.length; i++) {
-      getHoursReqs.push(
-                $.ajax({
-                  url: 'https://api.foursquare.com/v2/venues/' + result.venues[i].id + '/hours',
-                  jsonp: 'callback',
-                  data: hoursSearchConfig
-                })
-            );
-    }
-    return $.when.apply($, getHoursReqs);
-  }).then(function fetchVenueHours() {
-    result.hours = Array.prototype.slice.call(arguments).map(function mapHours(jqxhr) {
-      return jqxhr[0].response.hours;
-    });
-    return result;
-  });
+  })
+  .then(parseVenueSearchResponse)
+  .then(fetchOperatingHours);
 }
 
-function filterVenueByHours(venues, hours, filter) {
-  // console.log(filter);
+function filterVenueByHours(searchResult, filter) {
   if (filter === 'Any time') {
-    return { venues: venues, hours: hours };
+    return searchResult;
   }
 
-  var results = {
-    venues: [],
-    hours: []
-  };
-    // debugger;
-  for (var i = 0; i < venues.length; i++) {
-    if (!hours[i].timeframes) continue;
-    for (var j = 0; j < hours[i].timeframes.length; j++) {
-      if (!hours[i].timeframes[j].includesToday) continue;
-      for (var k = 0; k < hours[i].timeframes[j].open.length; k++) {
-        var openTimeframe = hours[i].timeframes[j].open[k];
-        var open = moment()
-                    .hour(parseInt(openTimeframe.start.slice(0, 2), 10))
-                    .minute(parseInt(openTimeframe.start.slice(2), 10));
-        var close = moment()
-                    .hour(parseInt(openTimeframe.end.slice(0, 2), 10))
-                    .minute(parseInt(openTimeframe.end.slice(2), 10));
+  var filteredResults = Object.assign({}, searchResult);
+  var venues = filteredResults.venues;
+  venues = venues.filter(function noHoursData(venue) {
+    if (venue.timeframes && venue.timeframes.length > 0) { return true; }
+    return false;
+  });
 
-        if (moment().isBetween(open, close, null, '[]')) {
-          results.venues.push(venues[i]);
-          results.hours.push(hours[i]);
-        }
+  venues = venues.filter(function notOpenNow(venue) {
+    for (var i = 0; i < venue.timeframes.length; i++) {
+      if (venue.timeframes[i].includesToday) {
+        var timeframe = venue.timeframes[i].open[0];
+        var openingTime = moment({hour: timeframe.start.slice(0, -2), minute: timeframe.start.slice(-2)});
+        var closingTime = moment({hour: timeframe.end.slice(0, -2), minute: timeframe.end.slice(-2)});
+        if (moment().isBetween(openingTime, closingTime, null, '[]')) { return true; }
       }
     }
-  }
-  return results;
+    return false;
+  });
+
+  filteredResults.venues = venues;
+  return filteredResults;
 }
 
 $(function main() {
-//   var state = {};
   var map;
   var mapMarkers = [];
 
@@ -181,9 +199,9 @@ $(function main() {
 
   $('#js-search-form').submit(function performSearch(event) {
     event.preventDefault();
-    getVenues($('#js-search-box').val(), $('#js-filter').val())
-            .done(function filterHours(result) {
-              var filteredResults = filterVenueByHours(result.venues, result.hours, $('#js-open-now').val());
+    searchVenues($('#js-search-box').val(), $('#js-filter').val())
+            .done(function filterHours(searchResults) {
+              var filteredResults = filterVenueByHours(searchResults, $('#js-open-now').val());
               populateResultList(filteredResults);
               mapMarkers = placeMapMarkers(filteredResults, map, mapMarkers);
             });

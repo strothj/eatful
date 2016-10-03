@@ -166,12 +166,12 @@ $(function main() {
   var map;
   var mapMarkers = [];
 
-  var showResults = function(searchResults) {
+  var showResults = function(searchResults) { // eslint-disable-line func-names
     populateResultList(searchResults);
     mapMarkers = placeMapMarkers(searchResults, map, mapMarkers);
   };
 
-  var performSearch = function() {
+  var performSearch = function() { // eslint-disable-line func-names
     searchVenues($('#js-search-box').val(), $('#js-filter').val())
       .done(function filterHours(searchResults) {
         showResults(searchResults);
@@ -180,12 +180,12 @@ $(function main() {
 
   populateFilterSelect();
 
-  $('#js-search-form').submit(function() {
+  $('#js-search-form').submit(function() { // eslint-disable-line func-names
     event.preventDefault();
     performSearch();
   });
 
-  $('#js-filter').change(function() {
+  $('#js-filter').change(function() { // eslint-disable-line func-names
     performSearch();
   });
 

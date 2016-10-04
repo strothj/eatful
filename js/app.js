@@ -47,8 +47,10 @@ function parseVenueSearchResponse(jsonResponse) {
       lng: venue.location.lng
     };
   });
-  results.lat = jsonResponse.response.geocode.feature.geometry.center.lat;
-  results.lng = jsonResponse.response.geocode.feature.geometry.center.lng;
+  if (jsonResponse.response.geocode) {
+    results.lat = jsonResponse.response.geocode.feature.geometry.center.lat;
+    results.lng = jsonResponse.response.geocode.feature.geometry.center.lng;
+  }
   return results;
 }
 
@@ -73,7 +75,11 @@ function placeMapMarkers(state) {
       title: venues[i].name
     }));
   }
-  map.panTo({lat: results.lat, lng: results.lng });
+  if (results.lat && results.lng) {
+    map.panTo({lat: results.lat, lng: results.lng });
+  } else {
+    map.panTo({lat: state.geo.lat, lng: state.geo.lng });
+  }
   state.markers = newMarkers;
 }
 
@@ -116,10 +122,14 @@ function loadMap() {
   return mapLoadState.promise();
 }
 
-function searchVenues(location, cuisine) {
+function searchVenues(location, cuisine, geo) {
   var cuisineFilter = CUISINE_FILTERS[cuisine];
   var config = createSearchConfig(cuisineFilter);
-  config.near = location;
+  if (location === 'Current Location') {
+    config.ll = geo.lat + ',' + geo.lng;
+  } else {
+    config.near = location;
+  }
 
   return $.ajax({
     url: 'https://api.foursquare.com/v2/venues/search',
@@ -136,7 +146,7 @@ function displayResults(state) {
 }
 
 function handleSearch(state) {
-  searchVenues($('#js-search-box').val(), $('#js-filter').val())
+  searchVenues($('#js-search-box').val(), $('#js-filter').val(), state.geo)
     .done(function(searchResults) {
       state.searchResults = searchResults;
       displayResults(state);
@@ -190,6 +200,16 @@ $(function main() {
 
   loadMap().done(function mapReady(m) {
     state.map = m;
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        state.geo = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        $('#js-search-box').val('Current Location');
+        handleSearch(state);
+      });
+    }
   });
 });
 

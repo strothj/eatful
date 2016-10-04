@@ -52,10 +52,15 @@ function parseVenueSearchResponse(jsonResponse) {
   return results;
 }
 
-function placeMapMarkers(results, map, markers) {
-  var venues = results.venues;
-  for (var i = 0; i < markers.length; i++) {
-    markers[i].setMap(null);
+function placeMapMarkers(state) {
+  var results = state.searchResults;
+  var map = state.map;
+  var markers = state.markers;
+  var venues = state.searchResults.venues;
+  if (state.markers) {
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].setMap(null);
+    }
   }
   var newMarkers = [];
   for (i = 0; i < venues.length; i++) {
@@ -69,7 +74,7 @@ function placeMapMarkers(results, map, markers) {
     }));
   }
   map.panTo({lat: results.lat, lng: results.lng });
-  return newMarkers;
+  state.markers = newMarkers;
 }
 
 function populateResultList(searchResults) {

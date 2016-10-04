@@ -130,13 +130,13 @@ $(function main() {
   var mapMarkers = [];
   var cachedResults;
 
-  var showResults = function(searchResults) { // eslint-disable-line func-names
+  var showResults = function(searchResults) {
     populateResultList(searchResults);
     mapMarkers = placeMapMarkers(searchResults, map, mapMarkers);
     map.setZoom(13);
   };
 
-  var performSearch = function() { // eslint-disable-line func-names
+  var performSearch = function() {
     searchVenues($('#js-search-box').val(), $('#js-filter').val())
       .done(function(searchResults) {
         cachedResults = searchResults;
@@ -146,16 +146,16 @@ $(function main() {
 
   populateFilterSelect();
 
-  $('#js-search-form').submit(function() { // eslint-disable-line func-names
+  $('#js-search-form').submit(function() {
     event.preventDefault();
     performSearch();
   });
 
-  $('#js-filter').change(function() { // eslint-disable-line func-names
+  $('#js-filter').change(function() {
     performSearch();
   });
 
-  $('#js-listings-container').on('click', '.js-listing', function(event) { // eslint-disable-line func-names
+  $('#js-listings-container').on('click', '.js-listing', function(event) {
     event.preventDefault();
     var targetID = $(this).attr('id');
     var venue = cachedResults.venues.find(function(elem) {

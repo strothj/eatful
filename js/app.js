@@ -82,7 +82,6 @@ function populateResultList(searchResults) {
     venue = searchResults.venues[i];
     elem = '<div class="listing row">' +
             '<h3><a href="#" class="js-listing" id="' + venue.id + '">' + venue.name + '</a></h3>' +
-            '<h4>Address</h4>' +
             venue.addressHTML +
             '<a href="http://foursquare.com/venue/' + venue.id + '" target="_blank">Foursquare Page</a>';
     '</div>';
@@ -125,52 +124,70 @@ function searchVenues(location, cuisine) {
   .then(parseVenueSearchResponse);
 }
 
+function displayResults(state) {
+  populateResultList(state.searchResults);
+  placeMapMarkers(state);
+  state.map.setZoom(13);
+}
+
+function handleSearch(state) {
+  searchVenues($('#js-search-box').val(), $('#js-filter').val())
+    .done(function(searchResults) {
+      state.searchResults = searchResults;
+      displayResults(state);
+    });
+}
+
+function toggleMobileCollapsedView(map) {
+  $('#js-sidebar').toggleClass('sidebar-collapsed');
+  $('#js-listings-container').toggleClass('listings-container-collapsed');
+  $('#js-show-listings-button').toggleClass('mobile-visible');
+  $('#js-map-container').toggleClass('mobile-visible');
+  google.maps.event.trigger(map, 'resize');
+}
+
+function handleListingClick(target, state) {
+  var targetID = $(target).attr('id');
+  var venue = state.searchResults.venues.find(function(elem) {
+    return targetID === elem.id;
+  });
+  if (venue) {
+    state.map.panTo({lat: venue.lat, lng: venue.lng});
+    state.map.setZoom(15);
+  }
+  toggleMobileCollapsedView(state.map);
+}
+
 $(function main() {
-  var map;
-  var mapMarkers = [];
-  var cachedResults;
-
-  var showResults = function(searchResults) {
-    populateResultList(searchResults);
-    mapMarkers = placeMapMarkers(searchResults, map, mapMarkers);
-    map.setZoom(13);
-  };
-
-  var performSearch = function() {
-    searchVenues($('#js-search-box').val(), $('#js-filter').val())
-      .done(function(searchResults) {
-        cachedResults = searchResults;
-        showResults(searchResults);
-      });
-  };
+  var state = {};
+  // var map;
+  // var mapMarkers = [];
+  // var cachedResults;
 
   populateFilterSelect();
 
   $('#js-search-form').submit(function() {
     event.preventDefault();
-    performSearch();
+    handleSearch(state);
   });
 
   $('#js-filter').change(function() {
-    performSearch();
+    handleSearch(state);
   });
 
   $('#js-listings-container').on('click', '.js-listing', function(event) {
     event.preventDefault();
-    var targetID = $(this).attr('id');
-    var venue = cachedResults.venues.find(function(elem) {
-      return targetID === elem.id;
-    });
-    if (venue) {
-      map.panTo({lat: venue.lat, lng: venue.lng});
-      map.setZoom(15);
-    }
+    handleListingClick(this, state);
+  });
+
+  $('#js-show-listings-button').click(function() {
+    toggleMobileCollapsedView();
   });
 
   $('#js-search-form').focus();
 
   loadMap().done(function mapReady(m) {
-    map = m;
+    state.map = m;
   });
 });
 

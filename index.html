@@ -13,7 +13,7 @@
 
 <body>
 
-    <div class="sidebar">
+    <div class="sidebar" id="js-sidebar">
 
         <div class="row">
             <form action="#" id="js-search-form" class="search-form">
@@ -22,15 +22,20 @@
         </div>
 
         <div class="row">
-            <div class="filter-option">
-                <select id="js-filter"></select>
-            </div>
+            <select id="js-filter"></select>
         </div>
 
         <div class="row listings-container" id="js-listings-container">
         </div>
     </div>
-    <div class="map" id="map"></div>
+
+    <div class="map-container" id="js-map-container">
+        <div class="map" id="map"></div>
+    </div>
+
+    <div class="show-list-container hidden" id="js-show-listings-button">
+        Show List
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
         crossorigin="anonymous"></script>

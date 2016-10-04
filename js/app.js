@@ -165,13 +165,10 @@ function handleListingClick(target, state) {
 
 $(function main() {
   var state = {};
-  // var map;
-  // var mapMarkers = [];
-  // var cachedResults;
 
   populateFilterSelect();
 
-  $('#js-search-form').submit(function() {
+  $('#js-search-form').submit(function(event) {
     event.preventDefault();
     handleSearch(state);
   });

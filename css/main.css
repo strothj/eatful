@@ -12,6 +12,7 @@ body {
 input, select {
     border: none;
     border-bottom: 2px solid #0099CC;
+    background-color: white;
 }
 
 input:focus, select:focus {
@@ -20,6 +21,7 @@ input:focus, select:focus {
 }
 
 a, a:link {
+    color: black;
     text-decoration: none;
 }
 
@@ -27,7 +29,13 @@ a:hover, a:active {
     text-decoration: underline;
 }
 
+address {
+    color: rgb(140, 140, 140);
+    font-style: normal;
+}
+
 h3 {
+    font-weight: normal;
     margin-top: 0;
     margin-bottom: 5px;
 }
@@ -83,10 +91,17 @@ h3 {
     font-size: .8em;
     margin-left: 0;
     margin-bottom: 0;
+    padding: 0;
 }
 
 .listing {
     padding-bottom: 10px;
+    border-bottom-width: 1px;
+}
+
+.listing img {
+    float: right;
+    height: 30px;
 }
 
 .sidebar + .map {
@@ -127,7 +142,7 @@ h3 {
     }
 
     .sidebar-collapsed {
-        height: 95px;
+        height: 80px;
     }
 
     .listings-container-collapsed {
@@ -136,7 +151,7 @@ h3 {
 
     .map-container {
         display: none;
-        top: 95px;
+        top: 80px;
         bottom: 50px;
         left: 0;
     }

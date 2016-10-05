@@ -43,6 +43,8 @@ function parseVenueSearchResponse(jsonResponse) {
         venue.location.formattedAddress.reduce(function lineSeperate(p, addressLine) {
           return p + addressLine + '<br>';
         }, '') + '</address>',
+      category: venue.categories[0].name,
+      categoryIcon: venue.categories[0].icon.prefix + 'bg_64' + venue.categories[0].icon.suffix,
       lat: venue.location.lat,
       lng: venue.location.lng
     };
@@ -52,6 +54,18 @@ function parseVenueSearchResponse(jsonResponse) {
     results.lng = jsonResponse.response.geocode.feature.geometry.center.lng;
   }
   return results;
+}
+
+function displayListingInfoWindow(map, marker, venue) {
+  var contentString = '<article>' +
+    '<h1>' + venue.name + '</h1>' +
+    venue.addressHTML +
+    '</article>' +
+    '<a href="http://foursquare.com/venue/' + venue.id + '" target="_blank">Foursquare Page</a>';
+  var infoWindow = new google.maps.InfoWindow({
+    content: contentString
+  });
+  infoWindow.open(map, marker);
 }
 
 function placeMapMarkers(state) {
@@ -66,14 +80,20 @@ function placeMapMarkers(state) {
   }
   var newMarkers = [];
   for (i = 0; i < venues.length; i++) {
-    newMarkers.push(new google.maps.Marker({
+    var marker = new google.maps.Marker({
       position: {
         lat: venues[i].lat,
         lng: venues[i].lng
       },
       map: map,
       title: venues[i].name
-    }));
+    });
+    newMarkers.push(marker);
+    (function(_marker, n) { // eslint-disable-line no-loop-func
+      marker.addListener('click', function() {
+        displayListingInfoWindow(map, _marker, venues[n]);
+      });
+    })(marker, i);
   }
   if (results.lat && results.lng) {
     map.panTo({lat: results.lat, lng: results.lng });
@@ -91,11 +111,14 @@ function populateResultList(searchResults) {
   var venue;
   for (var i = 0; i < searchResults.venues.length; i++) {
     venue = searchResults.venues[i];
-    elem = '<div class="listing row">' +
-            '<h3><a href="#" class="js-listing" id="' + venue.id + '">' + venue.name + '</a></h3>' +
+    elem = '<article class="listing row">' +
+            '<img src="' + venue.categoryIcon + '" alt="' + venue.category + '"> ' +
+            '<h3>' +
+            '<a href="#" class="js-listing" id="' + venue.id + '">' +
+            venue.name + '</a></h3>' +
             venue.addressHTML +
             '<a href="http://foursquare.com/venue/' + venue.id + '" target="_blank">Foursquare Page</a>';
-    '</div>';
+    '</article>';
     listContainer.append(elem);
   }
 }
@@ -168,7 +191,7 @@ function handleListingClick(target, state) {
   });
   if (venue) {
     state.map.panTo({lat: venue.lat, lng: venue.lng});
-    state.map.setZoom(15);
+    state.map.setZoom(14);
   }
   toggleMobileCollapsedView(state.map);
 }

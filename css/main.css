@@ -57,17 +57,26 @@ h3 {
     padding-right: 20px;
 }
 
-.search-form:after {
+.search-form button {
     position: absolute;
     right: 13px;
     top: 16px;
     font-family: FontAwesome;
-    content: '\f002';
+    border-style: none;
+    background-color: white;
+}
+
+.search-form button:hover {
+    cursor: pointer;
+}
+
+.search-form select {
+    padding-top: 10px;
 }
 
 .listings-container {
     position: absolute;
-    top: 100px;
+    top: 90px;
     bottom: 0px;
     width: 100%;
     overflow-y: auto;

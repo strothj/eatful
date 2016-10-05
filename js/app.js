@@ -196,8 +196,6 @@ $(function main() {
     toggleMobileCollapsedView();
   });
 
-  $('#js-search-form').focus();
-
   loadMap().done(function mapReady(m) {
     state.map = m;
     if ('geolocation' in navigator) {

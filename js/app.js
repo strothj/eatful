@@ -44,7 +44,7 @@ function parseVenueSearchResponse(jsonResponse) {
           return p + addressLine + '<br>';
         }, '') + '</address>',
       category: venue.categories[0].name,
-      categoryIcon: venue.categories[0].icon.prefix + 'bg_64' + venue.categories[0].icon.suffix,
+      categoryIcon: venue.categories[0].icon.prefix + '64' + venue.categories[0].icon.suffix,
       lat: venue.location.lat,
       lng: venue.location.lng
     };

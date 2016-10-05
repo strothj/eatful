@@ -220,6 +220,10 @@ $(function main() {
     toggleMobileCollapsedView();
   });
 
+  $('#js-close-about').click(function() {
+    $('#js-about').addClass('hidden');
+  });
+
   loadMap().done(function mapReady(m) {
     state.map = m;
     if ('geolocation' in navigator) {

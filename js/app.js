@@ -56,16 +56,17 @@ function parseVenueSearchResponse(jsonResponse) {
   return results;
 }
 
-function displayListingInfoWindow(map, marker, venue) {
+function displayListingInfoWindow(state, marker, venue) {
+  if (!state.infoWindow) {
+    state.infoWindow = new google.maps.InfoWindow();
+  }
   var contentString = '<article>' +
     '<h1>' + venue.name + '</h1>' +
     venue.addressHTML +
     '</article>' +
     '<a href="http://foursquare.com/venue/' + venue.id + '" target="_blank">Foursquare Page</a>';
-  var infoWindow = new google.maps.InfoWindow({
-    content: contentString
-  });
-  infoWindow.open(map, marker);
+  state.infoWindow.setContent(contentString);
+  state.infoWindow.open(state.map, marker);
 }
 
 function placeMapMarkers(state) {
@@ -91,7 +92,7 @@ function placeMapMarkers(state) {
     newMarkers.push(marker);
     (function(_marker, n) { // eslint-disable-line no-loop-func
       marker.addListener('click', function() {
-        displayListingInfoWindow(map, _marker, venues[n]);
+        displayListingInfoWindow(state, _marker, venues[n]);
       });
     })(marker, i);
   }

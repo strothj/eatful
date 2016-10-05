@@ -207,6 +207,18 @@ $(function main() {
     handleSearch(state);
   });
 
+  $('#js-search-box').click(function() {
+    if ($(this).val() === 'Current Location') {
+      $(this).val('');
+    }
+  });
+
+  $('#js-search-box').blur(function() {
+    if ($(this).val() === '' && state.geo) {
+      $(this).val('Current Location');
+    }
+  });
+
   $('#js-filter').change(function() {
     handleSearch(state);
   });
